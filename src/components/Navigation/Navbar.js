@@ -1,21 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { toastError, toastSuceess } from "../../util/react.toastify";
 
 // Material components
 import { Badge, IconButton, Popover } from "@mui/material";
-
 // Material icons
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import LogoutIcon from "@mui/icons-material/Logout";
 import MenuIcon from "@mui/icons-material/Menu";
-
 // Custom components
 import NotificationList from "../dashboard/components/Layouts/Topbar/NotifictionList/notification";
 import notifications from "../dashboard/data/notifications";
-import instance from "../../util/axios/config";
-import { authActions } from "../../redux/auth-slice";
+import { logout } from "../../redux/auth.slice";
 import classes from "./styles.module.css";
 // import Profile from "./Profile";
 import {
@@ -26,6 +24,8 @@ import {
 } from "./Dorpdown";
 
 const Navbar = () => {
+  const { auth, message } = useSelector((state) => state.auth);
+  const navigate = useNavigate();
   const [notification, setNotification] = useState({
     notifications: [],
     notificationsLimit: 4,
@@ -44,6 +44,11 @@ const Navbar = () => {
   };
   const [click, setClick] = useState(initialstate);
   const [mobileView, setMobileView] = useState(false);
+  useEffect(() => {
+    if (!auth) {
+      navigate("/");
+    }
+  }, [auth]);
 
   useEffect(() => {
     let isMounted = true;
@@ -85,26 +90,9 @@ const Navbar = () => {
       if (!confirm) {
         return;
       }
-
-      const response = await instance.post(`/logout?user=${userType}`);
-
-      if (response.data.status === "success") {
-        disapatch(authActions.logout());
-
-        toast.success(response.data.message, {
-          position: toast.POSITION.BOTTOM_CENTER,
-          autoClose: 2000,
-          hideProgressBar: true,
-          theme: "colored",
-        });
-      }
+      disapatch(logout());
     } catch (error) {
-      toast.error(error.response.data.message, {
-        position: toast.POSITION.BOTTOM_CENTER,
-        autoClose: 2000,
-        hideProgressBar: true,
-        theme: "colored",
-      });
+      toastError();
     }
   };
 

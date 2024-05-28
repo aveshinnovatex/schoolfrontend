@@ -1,8 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import { toast } from "react-toastify";
-
+import { createCity, fetchCity } from "../../../redux/city.slice";
 import {
   Grid,
   Card,
@@ -11,9 +10,8 @@ import {
   Divider,
   TextField,
 } from "@mui/material";
-
-import instance from "../../../util/axios/config";
 import styles from "./CityForm.module.css";
+import { useDispatch } from "react-redux";
 
 const CityForm = () => {
   const {
@@ -21,33 +19,17 @@ const CityForm = () => {
     handleSubmit,
     formState: { errors },
   } = useForm();
-
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const postSection = async (data) => {
     try {
-      const response = await instance.post("/city", data);
-
-      if (response.data.status === "failed") {
-        return response;
-      }
-
-      toast.success(response.data.message, {
-        position: toast.POSITION.BOTTOM_CENTER,
-        autoClose: 2000,
-        hideProgressBar: true,
-        theme: "colored",
+      await dispatch(createCity(data)).then(() => {
+        dispatch(fetchCity());
+        navigate("/city-list");
       });
-
-      navigate("/city-list");
     } catch (error) {
-      navigate("/login");
-      toast.error(error.response.data.message, {
-        position: toast.POSITION.BOTTOM_CENTER,
-        autoClose: 2000,
-        hideProgressBar: true,
-        theme: "colored",
-      });
+      console.log(error);
     }
   };
 
@@ -76,7 +58,7 @@ const CityForm = () => {
                 variant="outlined"
                 name="city"
                 helperText={errors.city ? "Field is required!" : ""}
-                {...register("city", { required: true })}
+                {...register("name", { required: true })}
               />
             </Grid>
             <Grid item md={6} sm={6} xs={12}>

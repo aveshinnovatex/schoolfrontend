@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { toast } from "react-toastify";
-
-// import { RotatingLines } from "react-loader-spinner";
-
+import {
+  deleteAccountGroup,
+  fetchAccountGroup,
+} from "../../../../redux/account.group.slice";
 import {
   Table,
   TableBody,
@@ -17,85 +17,27 @@ import {
   Typography,
 } from "@mui/material";
 
-import { authActions } from "../../../../redux/auth-slice";
-import {
-  fetchDataWithPagination,
-  deleteDataById,
-} from "../../../../redux/http-slice";
 import Modal from "../../../UI/Modal";
 import TableSkeleton from "../../../UI/Skeleton";
 import styles from "./Styles.module.css";
 
 const AccountGroupList = ({ onEditHandler }) => {
-  const [page, setPage] = useState({ currentPage: 0, totaltems: 0 });
-  const [rowsPerPage, setRowsPerPage] = React.useState(10);
-  const [index, setIndex] = useState(1);
   const [accountGroup, setAccountGroup] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [assignmentIdToDelete, setAssignmentIdToDelete] = useState(null);
-
   const dispatch = useDispatch();
-
-  const { pageData, Loading, response, deletedData, updatedData } = useSelector(
-    (state) => state.httpRequest
-  );
+  const { accountGroups, loading } = useSelector((state) => state.accountGroup);
 
   useEffect(() => {
-    if (!Loading && pageData) {
-      setPage((prevState) => ({
-        ...prevState,
-        totaltems: pageData?.totalData,
-      }));
-      setAccountGroup(pageData?.data);
+    dispatch(fetchAccountGroup());
+  }, [dispatch]);
+
+  // filter data for edit
+  useEffect(() => {
+    if (loading === "fulfilled" && accountGroups) {
+      setAccountGroup(accountGroups);
     }
-  }, [Loading, pageData]);
-
-  const path = `/account-group?page=${page.currentPage}&perPage=${rowsPerPage}`;
-
-  useEffect(() => {
-    const fetchAccountGroup = async () => {
-      try {
-        const startIndex = page.currentPage * rowsPerPage + 1;
-        setIndex(startIndex);
-        await dispatch(fetchDataWithPagination({ path })).unwrap();
-      } catch (error) {
-        if (error?.status === 401 || error?.status === 500) {
-          toast.error("Please login again!", {
-            position: toast.POSITION.BOTTOM_CENTER,
-            autoClose: 2000,
-            hideProgressBar: true,
-            theme: "colored",
-          });
-          // dispatch(authActions.logout());
-        } else {
-          toast.error(error?.message || "Something went wrong", {
-            position: toast.POSITION.BOTTOM_CENTER,
-            autoClose: 2000,
-            hideProgressBar: true,
-            theme: "colored",
-          });
-        }
-      }
-    };
-    fetchAccountGroup();
-  }, [
-    dispatch,
-    page.currentPage,
-    rowsPerPage,
-    path,
-    response.data,
-    deletedData,
-    updatedData,
-  ]);
-
-  const handleChangePage = (event, newPage) => {
-    setPage((prevState) => ({ ...prevState, currentPage: newPage }));
-  };
-
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(+event.target.value);
-    setPage((prevState) => ({ ...prevState, currentPage: 0 }));
-  };
+  }, [loading]);
 
   // filter data for edit
   const filterList = (index) => {
@@ -113,30 +55,11 @@ const AccountGroupList = ({ onEditHandler }) => {
   // delete confirmation handler modal
   const handleConfirmDeleteHandler = async () => {
     try {
-      await dispatch(
-        deleteDataById({
-          path: "/account/account-group",
-          id: assignmentIdToDelete,
-        })
-      ).unwrap();
-
-      // change page no if no document available after delete
-      if (accountGroup.length === 1 && page?.currentPage !== 0) {
-        setPage((prevState) => ({
-          ...prevState,
-          currentPage: page?.currentPage - 1,
-        }));
-      }
-
+      await dispatch(deleteAccountGroup(assignmentIdToDelete)).unwrap();
       setIsModalOpen(false);
     } catch (error) {
       setIsModalOpen(false);
-      toast.error(error || "Something went wrong", {
-        position: toast.POSITION.BOTTOM_CENTER,
-        autoClose: 2000,
-        hideProgressBar: true,
-        theme: "colored",
-      });
+      console.log(error);
     }
   };
 
@@ -178,7 +101,7 @@ const AccountGroupList = ({ onEditHandler }) => {
           </div>
         </Modal>
       )}
-      {!Loading ? (
+      {loading === "fulfilled" ? (
         <TableContainer>
           <Table sx={{ minWidth: 250 }} size="small">
             <TableHead>
@@ -197,23 +120,23 @@ const AccountGroupList = ({ onEditHandler }) => {
             </TableHead>
             <TableBody>
               {accountGroup && accountGroup.length > 0 ? (
-                accountGroup.map((row, indx) => (
+                accountGroup.map((row, index) => (
                   <TableRow
                     hover
-                    key={row?._id}
+                    key={row?.id}
                     sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
                   >
                     <TableCell component="th" scope="row">
-                      {index + indx}
+                      {index + 1}
                     </TableCell>
                     <TableCell align="left">{row?.name}</TableCell>
-                    <TableCell align="left">{row?.groupUnder?.name}</TableCell>
+                    <TableCell align="left">{row?.groupUnderNavName}</TableCell>
                     <TableCell align="left">
                       <Button
                         variant="text"
                         onClick={() => {
-                          onEditHandler(row?._id, row);
-                          filterList(indx);
+                          onEditHandler(row?.id, row);
+                          filterList(index);
                         }}
                       >
                         Edit
@@ -221,7 +144,7 @@ const AccountGroupList = ({ onEditHandler }) => {
                       <Button
                         variant="text"
                         onClick={() => {
-                          deleteHandler(row?._id);
+                          deleteHandler(row?.id);
                         }}
                       >
                         Delete
@@ -243,17 +166,6 @@ const AccountGroupList = ({ onEditHandler }) => {
         <TableSkeleton />
       )}
       <Divider />
-      {!Loading && (
-        <TablePagination
-          rowsPerPageOptions={[10, 25, 100]}
-          component="div"
-          count={page.totaltems || 0}
-          rowsPerPage={rowsPerPage}
-          page={page.currentPage}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-        />
-      )}
     </>
   );
 };

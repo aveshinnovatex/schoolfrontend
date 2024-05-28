@@ -1,15 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
-// import axios from "../../util/axios/config";
-import axios from "axios";
-import { toast } from "react-toastify";
 import { useDispatch, useSelector } from "react-redux";
-
-import { authActions } from "../../redux/auth-slice";
 import { uiAction } from "../../redux/ui-slice";
 import ForgetPasswordForm from "../Forget-Password/Form";
-
 import logo from "../../assets/logo.png";
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
@@ -20,7 +14,7 @@ import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import FormControl from "@mui/material/FormControl";
 import { Button, IconButton, TextField, Typography } from "@mui/material";
-
+import { login } from "../../redux/auth.slice";
 // import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import styles from "./Login.module.css";
 
@@ -30,65 +24,35 @@ const LoginForm = () => {
     handleSubmit,
     formState: { errors },
   } = useForm();
-
   const disapatch = useDispatch();
   const navigate = useNavigate();
 
   const isModalOpen = useSelector((state) => state.ui.open);
+  const { loading, auth } = useSelector((state) => state.auth);
   const [alignment, setAlignment] = useState("admin");
   const [showPassword, setShowPassword] = React.useState(false);
-
   const handleChange = (event, newAlignment) => {
     setAlignment(newAlignment);
   };
 
   const handleClickShowPassword = () => setShowPassword((show) => !show);
-
   const handleMouseDownPassword = (event) => {
     event.preventDefault();
   };
+
+  useEffect(() => {
+    if (auth && loading === "fulfilled") {
+      navigate("/dashborad");
+    }
+  }, [loading, auth]);
 
   const handleOpenModal = () => {
     disapatch(uiAction.openModal(true));
   };
 
-  const userLogin = async (data) => {
-    try {
-      const formData = new FormData();
-      formData.append("name", "admin@gmail.com");
-      formData.append("password", "admin");
-      const response = await axios.post(
-        "http://njhtest.marwariplus.com/Login/Login",
-        formData
-      );
-      console.log("response", response);
-
-      if (response?.data?.token) {
-        disapatch(
-          authActions.login({
-            token: response.data.token,
-            // userType: response.data.userType,
-            // user: response.data.user,
-          })
-        );
-
-        toast.success(response.data.message, {
-          position: toast.POSITION.BOTTOM_CENTER,
-          autoClose: 2000,
-          hideProgressBar: true,
-          theme: "colored",
-        });
-
-        navigate("/dashborad");
-      }
-    } catch (error) {
-      toast.error(error.response.data.message, {
-        position: toast.POSITION.BOTTOM_CENTER,
-        autoClose: 2000,
-        hideProgressBar: true,
-        theme: "colored",
-      });
-    }
+  const userLogin = (userData) => {
+    const { userType, ...data } = userData;
+    disapatch(login(data));
   };
 
   const onSubmit = (data) => {
@@ -165,7 +129,7 @@ const LoginForm = () => {
                     placeholder="example@gmail.com"
                     name="email"
                     type="text"
-                    defaultValue="ajay@digisidekick.com"
+                    defaultValue="admin@gmail.com"
                     variant="outlined"
                     {...register("email", {
                       required: true,
@@ -215,6 +179,7 @@ const LoginForm = () => {
                 <OutlinedInput
                   label="Password"
                   id="outlined-adornment-password"
+                  defaultValue="admin"
                   type={showPassword ? "text" : "password"}
                   {...register("password", { required: true })}
                   endAdornment={

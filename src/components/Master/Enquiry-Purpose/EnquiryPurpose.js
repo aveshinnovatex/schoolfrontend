@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useDispatch } from "react-redux";
-// import { toast } from "react-toastify";
 import {
   Box,
   Button,
@@ -12,9 +11,11 @@ import {
   Divider,
   TextField,
 } from "@mui/material";
-
-import useHttpErrorHandler from "../../../hooks/useHttpErrorHandler";
-import { postData, updateDataById } from "../../../redux/http-slice";
+import {
+  createEnquiryPurpose,
+  updateEnquiryPurpose,
+  fetchEnquiryPurpose,
+} from "../../../redux/enquiry.purpose.slice";
 import EnquiryPurposeList from "./EnquiryPurposeList";
 import classes from "./styles.module.css";
 
@@ -26,38 +27,41 @@ const EnquiryPurpose = () => {
     setValue,
     formState: { errors },
   } = useForm();
-
-  const [editValue, setEditValue] = useState({ id: "", purpose: "" });
+  const [editValue, setEditValue] = useState({ id: "", name: "" });
+  const [updatedValue, setUpdatedValue] = useState({});
   const dispatch = useDispatch();
-  const handleHttpError = useHttpErrorHandler();
 
   const onEditHandler = (editedData) => {
     setEditValue({
-      id: editedData?._id,
-      purpose: editedData?.purpose,
+      id: editedData?.id,
+      name: editedData?.name,
     });
-    setValue("purpose", editedData?.purpose);
+    setUpdatedValue(editedData);
+    setValue("name", editedData?.name);
     window.scrollTo({
       top: 0,
       behavior: "smooth",
     });
   };
-
-  const { id, purpose } = editValue;
+  const { id, name } = editValue;
 
   const onSubmit = async (data) => {
     try {
-      if (id !== "" && purpose !== "") {
+      if (id !== "" && name !== "") {
         await dispatch(
-          updateDataById({ path: "/enquiry-purpose", id: id, data })
-        ).unwrap();
+          updateEnquiryPurpose({ ...updatedValue, name: data.name })
+        ).then(() => {
+          dispatch(fetchEnquiryPurpose());
+        });
       } else {
-        await dispatch(postData({ path: "/enquiry-purpose", data })).unwrap();
+        await dispatch(createEnquiryPurpose(data)).then(() => {
+          dispatch(fetchEnquiryPurpose());
+        });
       }
       reset();
-      setEditValue({ id: "", purpose: "" });
+      setEditValue({ id: "", name: "" });
     } catch (error) {
-      handleHttpError(error);
+      console.error(error);
     }
   };
 
@@ -80,14 +84,14 @@ const EnquiryPurpose = () => {
                 <TextField
                   className={classes.textField}
                   error={errors.purpose ? true : false}
-                  focused={Boolean(editValue?.purpose)}
+                  focused={Boolean(editValue?.name)}
                   id="purpose"
                   size="small"
                   label="Enquiry Purpose"
                   variant="outlined"
                   name="purpose"
                   helperText={errors.purpose ? "Field is required!" : ""}
-                  {...register("purpose", { required: true })}
+                  {...register("name", { required: true })}
                 />
               </Grid>
             </Grid>

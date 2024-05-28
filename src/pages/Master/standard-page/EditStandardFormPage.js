@@ -1,48 +1,27 @@
-import React, { useEffect, Suspense } from "react";
-import { useRouteLoaderData, Await, defer } from "react-router-dom";
-import { useDispatch } from "react-redux";
-import { toast } from "react-toastify";
-
-import instance from "../../../util/axios/config";
-import { uiAction } from "../../../redux/ui-slice";
+import React, { useEffect, Suspense, useState } from "react";
+import { useParams } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import StandardForm from "../../../components/Master/Standard/standardForm";
-
+import { fetchStandardDetails } from "../../../redux/standard.slice";
 const EditStandardFormPage = () => {
   const dispatch = useDispatch();
-  const { data } = useRouteLoaderData("standard-data");
-
+  const { id } = useParams();
+  const { standardDetail, loading } = useSelector((state) => state.standard);
+  const [editData, setEditdata] = useState({});
   useEffect(() => {
-    dispatch(uiAction.title("Standard Form"));
-  }, [dispatch]);
+    dispatch(fetchStandardDetails(id));
+  }, [dispatch, id]);
+  useEffect(() => {
+    if (loading === "fulfilled") {
+      setEditdata(standardDetail);
+    }
+  }, [loading]);
 
   return (
-    <Suspense fallback={<p style={{ textAlign: "center" }}>Loading....</p>}>
-      <Await resolve={data}>
-        {(loadedData) => <StandardForm editedData={loadedData} />}
-      </Await>
-    </Suspense>
+    <>
+      <StandardForm editedData={editData} />
+    </>
   );
 };
-
-export const loadData = async (id) => {
-  try {
-    const response = await instance.get("/standard/" + id);
-    return response.data.data;
-  } catch (error) {
-    toast.error(error?.response?.data?.message || "Something went wrong", {
-      position: toast.POSITION.BOTTOM_CENTER,
-      autoClose: 2000,
-      hideProgressBar: true,
-      theme: "colored",
-    });
-  }
-};
-
-export async function loader({ params }) {
-  const id = params.id;
-  return defer({
-    data: await loadData(id),
-  });
-}
 
 export default EditStandardFormPage;

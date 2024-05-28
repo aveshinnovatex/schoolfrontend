@@ -1,8 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
+import {
+  fetchSession,
+  deleteSession,
+  updateSession,
+  createSession,
+} from "../../../redux/session.slice";
 
 import {
   Box,
@@ -13,11 +19,6 @@ import {
   CardHeader,
   Divider,
   TextField,
-  // Chip,
-  // FormLabel,
-  // Radio,
-  // RadioGroup,
-  // FormControlLabel,
 } from "@mui/material";
 
 import dayjs from "dayjs";
@@ -27,8 +28,6 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 
 import useHttpErrorHandler from "../../../hooks/useHttpErrorHandler";
-import { postData, updateDataById } from "../../../redux/http-slice";
-
 import classes from "./styles.module.css";
 
 const SessionForm = ({ editedData }) => {
@@ -38,20 +37,17 @@ const SessionForm = ({ editedData }) => {
     setValue,
     formState: { errors },
   } = useForm();
-
   const [editValue, setEditValue] = useState({
     id: "",
     name: "",
     startDate: null,
     endDate: null,
-    connectionString: "",
     active: "",
   });
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const handleHttpError = useHttpErrorHandler();
-  // const [active, setActive] = useState(false);
   const [date, setDate] = useState({ startDate: null, endDate: null });
 
   useEffect(() => {
@@ -61,14 +57,10 @@ const SessionForm = ({ editedData }) => {
         name: editedData?.name,
         startDate: editedData?.startDate,
         endDate: editedData?.endDate,
-        connectionString: editedData?.connectionString,
         active: editedData?.active,
       });
 
       setValue("name", editedData?.name);
-      setValue("connectionString", editedData?.connectionString);
-
-      // setActive(editedData?.active);
       setDate({
         startDate: editedData?.startDate,
         endDate: editedData?.endDate,
@@ -90,10 +82,9 @@ const SessionForm = ({ editedData }) => {
 
       const formData = {
         ...data,
-        id: id,
-        startDate: startDate,
-        endDate: endDate,
-        //active: active,
+        // id: id,
+        startDate: startDate.match(/[0-9]/g).join(""),
+        endDate: endDate.match(/[0-9]/g).join(""),
       };
 
       if (!date?.startDate && !date?.endDate) {
@@ -108,11 +99,9 @@ const SessionForm = ({ editedData }) => {
       }
 
       if (editValue?.id !== "") {
-        await dispatch(
-          updateDataById({ path: "/session", id: id, data: formData })
-        ).unwrap();
+        await dispatch(updateSession(formData)).unwrap();
       } else {
-        await dispatch(postData({ path: "/session", data: formData })).unwrap();
+        await dispatch(createSession(formData)).unwrap();
       }
 
       navigate("/session");
@@ -146,22 +135,6 @@ const SessionForm = ({ editedData }) => {
                   {...register("name", { required: true })}
                 />
               </Grid>
-
-              <Grid item md={8} sm={6} xs={12}>
-                <TextField
-                  className={classes.textField}
-                  error={errors.name ? true : false}
-                  id="connectionString"
-                  label="Connection String"
-                  variant="outlined"
-                  name="connectionString"
-                  helperText={
-                    errors.connectionString ? "Field is required!" : ""
-                  }
-                  {...register("connectionString", { required: true })}
-                />
-              </Grid>
-
               <Grid item md={3} sm={4} xs={12}>
                 {!editValue?.startDate && (
                   <LocalizationProvider
@@ -182,7 +155,6 @@ const SessionForm = ({ editedData }) => {
                               startDate: newValue.format(),
                             }))
                           }
-                          // defaultValue={dayjs(editValue?.startDate || null)}
                           label="Start Date"
                           className={classes.dateInp}
                         />
@@ -280,40 +252,6 @@ const SessionForm = ({ editedData }) => {
                   </LocalizationProvider>
                 )}
               </Grid>
-
-              {/* <Grid item md={4} sm={6} xs={12} sx={{ mt: -1 }}>
-                <FormLabel
-                  sx={{ mt: -1.5 }}
-                  id="demo-row-radio-buttons-group-label"
-                >
-                  Is Active Session
-                </FormLabel>
-                <RadioGroup
-                  row
-                  sx={{ mt: -1 }}
-                  value={active || false}
-                  onChange={(event) => {
-                    setActive(event.target.value);
-                  }}
-                  aria-labelledby="demo-row-radio-buttons-group-label"
-                  name="row-radio-buttons-group"
-                >
-                  <FormControlLabel
-                    value={true}
-                    control={<Radio style={{ color: "#4caf50" }} />}
-                    label={
-                      <Chip
-                        label="Yes"
-                        style={{
-                          backgroundColor: "#4caf50",
-                          color: "white",
-                        }}
-                        size="small"
-                      />
-                    }
-                  />
-                </RadioGroup>
-              </Grid> */}
             </Grid>
           </CardContent>
           <Divider />
@@ -324,16 +262,6 @@ const SessionForm = ({ editedData }) => {
           </Box>
         </Card>
       </form>
-
-      {/* <Grid className={classes.container}>
-        <Card>
-          <CardHeader subheader="Session List" title="Session" />
-          <Divider />
-          <CardContent>
-            <SessionList onEditHandler={onEditHandler} />
-          </CardContent>
-        </Card>
-      </Grid> */}
     </>
   );
 };

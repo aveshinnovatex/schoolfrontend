@@ -1,52 +1,23 @@
-import React, { useEffect, Suspense } from "react";
-import { useRouteLoaderData, Await, defer, json } from "react-router-dom";
-import { useDispatch } from "react-redux";
-import { toast } from "react-toastify";
-
-import instance from "../../util/axios/config";
-import { uiAction } from "../../redux/ui-slice";
+import React, { useEffect } from "react";
+import { useParams } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import Account from "../../components/dashboard/components/Account/Account";
-
+// import { fetchAccountDetails } from "../../redux/account.slice";
 const EditAccountFormPage = () => {
-  const dispatch = useDispatch();
+  // const { accountDetail, loading } = useSelector((state) => state.account);
 
-  useEffect(() => {
-    dispatch(uiAction.title("Update Account"));
-  }, [dispatch]);
+  // const dispatch = useDispatch();
+  let { id } = useParams();
 
-  const { accountData } = useRouteLoaderData("account-data");
-
+  // useEffect(() => {
+  //   if (id) {
+  //     dispatch(fetchAccountDetails(id));
+  //   }
+  // }, [id]);
   return (
-    <Suspense fallback={<p style={{ textAlign: "center" }}>Loading....</p>}>
-      <Await resolve={accountData}>
-        {(loadedData) => <Account value={loadedData} method="put" />}
-      </Await>
-    </Suspense>
+    // <h1>Hiii</h1>
+    id && <Account accountGroupId={id} method="put" />
   );
 };
-
-export const loadAccountData = async (id) => {
-  try {
-    const response = await instance.get("/account/" + id);
-    if (response.status === "failed") {
-      return json({ message: "Could not fetch data." }, { status: 500 });
-    }
-    return response.data.data;
-  } catch (error) {
-    toast.error(error, {
-      position: toast.POSITION.BOTTOM_CENTER,
-      autoClose: 2000,
-      hideProgressBar: true,
-      theme: "colored",
-    });
-  }
-};
-
-export async function loader({ params }) {
-  const id = params.id;
-  return defer({
-    accountData: await loadAccountData(id),
-  });
-}
 
 export default EditAccountFormPage;

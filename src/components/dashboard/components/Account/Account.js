@@ -14,20 +14,23 @@ import {
   TextField,
   Autocomplete,
 } from "@mui/material";
-
+import {
+  createAccount,
+  fetchAccount,
+  fetchAccountDetails,
+  updateAccount,
+} from "../../../../redux/account.slice";
+import { fetchAccountGroup } from "../../../../redux/account.group.slice";
 import parse from "autosuggest-highlight/parse";
 import match from "autosuggest-highlight/match";
-
-import { authActions } from "../../../../redux/auth-slice";
 import useHttpErrorHandler from "../../../../hooks/useHttpErrorHandler";
-import {
-  postData,
-  updateDataById,
-  fetchData,
-} from "../../../../redux/http-slice";
 import classes from "./Styles.module.css";
 
-const Account = ({ value, method }) => {
+const Account = ({ accountGroupId, method }) => {
+  const { accountGroups, loading: accountGroupLoading } = useSelector(
+    (state) => state.accountGroup
+  );
+  const { accountDetail, loading } = useSelector((state) => state.account);
   const {
     register,
     handleSubmit,
@@ -35,70 +38,59 @@ const Account = ({ value, method }) => {
     formState: { errors },
   } = useForm();
 
-  // console.log(value);
-
   const [accountGroup, setAccountGroup] = useState([]);
   const [editValue, setEditValue] = useState({
-    id: value?._id,
-    accountName: value?.accountName,
-    openingBalance: value?.openingBalance,
+    id: "",
+    name: "",
+    openingBalance: null,
     method: method,
   });
-  const [selectedAcGroup, setSelectedAcGroup] = useState(value?.accountGroupId);
+  const [selectedAcGroup, setSelectedAcGroup] = useState(null);
   const dispatch = useDispatch();
   const handleHttpError = useHttpErrorHandler();
   const navigate = useNavigate();
 
-  const { data, httpError, Loading } = useSelector(
-    (state) => state.httpRequest
-  );
+  useEffect(() => {
+    if (accountGroupId) {
+      dispatch(fetchAccountDetails(accountGroupId));
+    }
+  }, [accountGroupId]);
+  useEffect(() => {
+    if (accountGroupId && accountDetail && loading === "fulfilled") {
+      console.log("Account Details", accountDetail);
+      setValue("openingBalance", accountDetail.openingBalance);
+      setEditValue((prev) => ({ ...prev, ...accountDetail }));
+      setSelectedAcGroup(accountDetail?.accountGroupNav);
+    }
+  }, [accountGroupId, accountDetail, loading]);
 
   useEffect(() => {
-    if (Loading === false && !httpError) {
-      setAccountGroup(data);
-    }
-    if (httpError?.status === 401 || httpError?.status === 500) {
-      // dispatch(authActions.logout());
-    }
-  }, [dispatch, Loading, httpError, data]);
+    dispatch(fetchAccountGroup());
+  }, [dispatch]);
 
-  const { id, accountName, openingBalance } = editValue;
+  const { id, name, openingBalance } = editValue;
 
   useEffect(() => {
-    const fetchAccountGroupData = async () => {
-      try {
-        await dispatch(
-          fetchData({ path: "/account/account-group/all" })
-        ).unwrap();
-      } catch (error) {
-        handleHttpError(error);
-      }
-    };
-
-    fetchAccountGroupData();
-  }, [dispatch, handleHttpError]);
+    dispatch(fetchAccount()).unwrap();
+  }, [dispatch]);
 
   const onSubmit = async (data) => {
     try {
       if (selectedAcGroup && data) {
-        const accountGroupId = selectedAcGroup._id;
+        const accountGroupId = selectedAcGroup.id;
         const accData = {
-          accountName: accountName,
+          name: name,
           accountGroupId: accountGroupId,
           openingBalance: openingBalance,
         };
 
         if (method === "put") {
-          await dispatch(
-            updateDataById({ path: "/account/", id: id, data: accData })
-          ).unwrap();
+          await dispatch(updateAccount({ id: id, ...accData })).unwrap();
         } else {
           const accData = { ...data, accountGroupId: accountGroupId };
-          await dispatch(
-            postData({ path: "/account", data: accData })
-          ).unwrap();
+          await dispatch(createAccount(accData)).unwrap();
         }
-        setEditValue({ id: "", accountName: "", method: "" });
+        setEditValue({ id: "", name: "", method: "" });
         navigate("/account");
       } else {
         toast.error("All field are required!", {
@@ -140,9 +132,9 @@ const Account = ({ value, method }) => {
                 label="Account Name"
                 name="accountName"
                 variant="outlined"
-                value={editValue?.accountName || ""}
+                value={editValue?.name || ""}
                 helperText={errors.accountName ? "Field is required!" : ""}
-                {...register("accountName", { required: true })}
+                {...register("name", { required: true })}
                 onChange={handleChange}
               />
             </Grid>
@@ -151,12 +143,10 @@ const Account = ({ value, method }) => {
                 id="highlights-demo"
                 sx={{ width: "100%" }}
                 style={{ width: "100%" }}
-                options={accountGroup || []}
+                options={accountGroups || []}
                 value={selectedAcGroup || null}
                 getOptionLabel={(accountGroup) => accountGroup?.name}
-                isOptionEqualToValue={(option, value) =>
-                  option._id === value._id
-                }
+                isOptionEqualToValue={(option, value) => option.id === value.id}
                 onChange={handleAcGroupChange}
                 renderInput={(params) => (
                   <TextField {...params} label="Group Name" />

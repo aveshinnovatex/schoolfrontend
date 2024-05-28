@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
-import { useDispatch } from "react-redux";
-// import { toast } from "react-toastify";
+import { useDispatch, useSelector } from "react-redux";
 import {
   Box,
   Button,
@@ -12,12 +11,15 @@ import {
   Divider,
   TextField,
 } from "@mui/material";
-import axios from "axios";
 
 import useHttpErrorHandler from "../../../hooks/useHttpErrorHandler";
-import { postData, updateDataById } from "../../../redux/http-slice";
 import SectionList from "./SectionList";
 import classes from "./styles.module.css";
+import {
+  createSections,
+  updateSections,
+  fetchSection,
+} from "../../../redux/section.slice";
 
 const Section = () => {
   const {
@@ -33,7 +35,7 @@ const Section = () => {
   const handleHttpError = useHttpErrorHandler();
 
   const onEditHandler = (editedData) => {
-    setEditValue({ id: editedData?._id, name: editedData?.name });
+    setEditValue({ id: editedData?.id, name: editedData?.name });
     setValue("name", editedData?.name);
     window.scrollTo({
       top: 0,
@@ -44,33 +46,30 @@ const Section = () => {
   const { id, name } = editValue;
 
   const onSubmit = async (data) => {
-    // try {
-    //   if (id !== "" && name !== "") {
-    //     await dispatch(
-    //       updateDataById({ path: "/section", id: id, data: name })
-    //     ).unwrap();
-    //   } else {
-    //     await dispatch(postData({ path: "/section", data })).unwrap();
-    //   }
-    //   reset();
-    //   setEditValue({ id: "", name: "" });
-    // } catch (error) {
-    //   handleHttpError(error);
-    // }
-    try {
-      const token = localStorage.getItem("token");
-      console.log("token avesh" + token);
-      const response = await axios.post(
-        "http://njhtest.marwariplus.com/api/DivisionApi",
-        formData,
-        {
-          headers: {
-            // It's best not to set Content-Type manually for FormData
-          },
-        }
-      );
-    } catch (error) {
-      console.error("Error:", error.response || error.message);
+    if (editValue.id) {
+      try {
+        await dispatch(updateSections(editValue))
+          .unwrap()
+          .then(() => {
+            reset();
+            setEditValue({ id: "", name: "" });
+            dispatch(fetchSection());
+          });
+      } catch (error) {
+        handleHttpError(error);
+      }
+    } else {
+      try {
+        await dispatch(createSections(data))
+          .unwrap()
+          .then(() => {
+            reset();
+            setEditValue({ id: "", name: "" });
+            dispatch(fetchSection());
+          });
+      } catch (error) {
+        handleHttpError(error);
+      }
     }
   };
 

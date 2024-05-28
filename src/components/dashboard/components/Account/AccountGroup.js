@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
-// import { toast } from "react-toastify";
 import {
   Box,
   Button,
@@ -13,16 +12,14 @@ import {
   TextField,
   Autocomplete,
 } from "@mui/material";
-
 import parse from "autosuggest-highlight/parse";
 import match from "autosuggest-highlight/match";
-
-import useHttpErrorHandler from "../../../../hooks/useHttpErrorHandler";
 import {
-  postData,
-  fetchData,
-  updateDataById,
-} from "../../../../redux/http-slice";
+  createAccountGroup,
+  updateAccountGroup,
+  fetchAccountGroup,
+} from "../../../../redux/account.group.slice";
+import useHttpErrorHandler from "../../../../hooks/useHttpErrorHandler";
 import AccountGroupList from "./AccountGroupList";
 import classes from "./Styles.module.css";
 
@@ -40,24 +37,29 @@ const AccountGroup = () => {
     name: "",
     groupUnder: null,
   });
+  const [updateValue, setUpdateValue] = useState({});
   const [accountGroup, setAccountGroup] = useState([]);
   const [selectedAcGroup, setSelectedAcGroup] = useState(null);
+
   const dispatch = useDispatch();
   const handleHttpError = useHttpErrorHandler();
 
-  const { data, httpError, Loading, response, deletedData, updatedData } =
-    useSelector((state) => state.httpRequest);
+  const { accountGroups, loading } = useSelector((state) => state.accountGroup);
 
   useEffect(() => {
-    if (Loading === false && !httpError && data) {
-      setAccountGroup(data);
+    if (loading === "fulfilled" && accountGroups) {
+      setAccountGroup(accountGroups);
     }
-  }, [dispatch, Loading, httpError, data, response, deletedData, updatedData]);
+  }, [dispatch]);
 
   const onEditHandler = (id, editedData) => {
     setEditValue({ id: id, name: editedData?.name });
-    setSelectedAcGroup(editedData?.groupUnder);
+    setSelectedAcGroup((prev) => ({
+      ...prev,
+      name: editedData?.groupUnderNavName,
+    }));
     setValue("name", editedData?.name);
+    setUpdateValue(editedData);
     window.scrollTo({
       top: 0,
       behavior: "smooth",
@@ -65,36 +67,32 @@ const AccountGroup = () => {
   };
 
   useEffect(() => {
-    const fetchAccountGroupData = async () => {
-      try {
-        await dispatch(
-          fetchData({ path: "/account/account-group/all" })
-        ).unwrap();
-      } catch (error) {
-        handleHttpError(error);
-      }
-    };
-
-    fetchAccountGroupData();
-  }, [dispatch, handleHttpError, response, deletedData, updatedData]);
+    try {
+      dispatch(fetchAccountGroup());
+    } catch (error) {
+      handleHttpError(error);
+    }
+  }, [dispatch]);
 
   const { id, name } = editValue;
 
   const onSubmit = async (data) => {
     try {
       const formData = {
-        name: name,
-        groupUnder: selectedAcGroup?._id,
+        name: name ?? data.name,
+        groupUnder: selectedAcGroup?.id ?? updateValue.groupUnder,
       };
 
       if (id !== "" && name !== "") {
         await dispatch(
-          updateDataById({ path: "/account-group", id: id, data: formData })
-        ).unwrap();
+          updateAccountGroup({ ...updateValue, ...formData })
+        ).then(() => {
+          dispatch(fetchAccountGroup());
+        });
       } else {
-        await dispatch(
-          postData({ path: "/account-group", data: formData })
-        ).unwrap();
+        await dispatch(createAccountGroup(formData)).then(() => {
+          dispatch(fetchAccountGroup());
+        });
       }
       reset();
       setEditValue({ id: "", name: "" });
@@ -136,11 +134,11 @@ const AccountGroup = () => {
                   id="highlights-demo"
                   sx={{ width: "100%" }}
                   style={{ width: "100%" }}
-                  options={accountGroup || []}
+                  options={accountGroups || []}
                   value={selectedAcGroup || null}
                   getOptionLabel={(accountGroup) => accountGroup?.name}
                   isOptionEqualToValue={(option, value) =>
-                    option._id === value._id
+                    option.id === value.id
                   }
                   onChange={(event, value) => {
                     setSelectedAcGroup(value);

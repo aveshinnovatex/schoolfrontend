@@ -7,6 +7,7 @@ import StateList from "../../components/State/StateList";
 import Modal from "../../components/UI/Modal";
 import styles from "../../components/State/StateForm.module.css";
 import instance from "../../util/axios/config";
+import { fetchState, updateState } from "../../redux/state.slice";
 
 const StateListPage = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -15,36 +16,14 @@ const StateListPage = () => {
   const [updatedData, setUpdatedData] = useState();
   const dispatch = useDispatch();
 
-  useEffect(() => {
-    dispatch(uiAction.title("State"));
-  }, [dispatch]);
-
   const postSection = async (data) => {
     try {
-      const response = await instance.put("/state/" + value._id, {
-        name: data,
+      await dispatch(updateState({ ...value, name: data })).then(() => {
+        dispatch(fetchState());
+        setIsOpen(false);
       });
-
-      if (response.data.status === "failed") {
-        return response;
-      }
-
-      toast.success(response?.data?.message, {
-        position: toast.POSITION.BOTTOM_CENTER,
-        autoClose: 2000,
-        hideProgressBar: true,
-        theme: "colored",
-      });
-
-      setUpdatedData(response.data.data);
-      setIsOpen(false);
     } catch (error) {
-      toast.error(error?.response?.data?.message, {
-        position: toast.POSITION.BOTTOM_CENTER,
-        autoClose: 2000,
-        hideProgressBar: true,
-        theme: "colored",
-      });
+      console.error(error);
     }
   };
   const handleSubmit = (e) => {

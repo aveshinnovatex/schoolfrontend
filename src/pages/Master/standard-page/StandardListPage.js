@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from "react";
-import { useDispatch } from "react-redux";
-
-import { uiAction } from "../../../redux/ui-slice";
+import { useDispatch, useSelector } from "react-redux";
 import StandardList from "../../../components/Master/Standard/StandardList";
 import Modal from "../../../components/UI/Modal";
 import styles from "../../../components/Master/Standard/StandardForm.module.css";
 import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
 import Stack from "@mui/material/Stack";
-import instance from "../../../util/axios/config";
-
+import { fetchSection } from "../../../redux/section.slice";
+import { fetchAllStanderd } from "../../../redux/standard.slice";
 const StandardListPage = () => {
+  const { sections, loading } = useSelector((state) => state.section);
+  const { standards, loading: standardLoading } = useSelector(
+    (state) => state.standard
+  );
+  const dispatch = useDispatch();
+
   const [isOpen, setIsOpen] = useState(false);
   const [value, setValue] = useState({});
   const [newValue, setNewValue] = useState("");
@@ -18,34 +22,18 @@ const StandardListPage = () => {
   const [optionSelected, setSelected] = useState(null);
   const [section, setSection] = useState([]);
 
-  // const options = section.map((obj) => ({
-  //   value: obj._id,
-  //   label: obj.section,
-  // }));
-
-  const dispatch = useDispatch();
-
   useEffect(() => {
-    dispatch(uiAction.title("Standard"));
+    dispatch(fetchSection());
+  }, [dispatch]);
+  useEffect(() => {
+    dispatch(fetchAllStanderd());
   }, [dispatch]);
 
-  const getSection = async () => {
-    try {
-      const response = await instance.get(`/section/all`);
-      //   if (!response.ok) {
-      //     return json({ message: "Could not fetch datas." }, { status: 500 });
-      //   } else {
-      // }
-
-      setSection(response.data.data);
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
   useEffect(() => {
-    getSection();
-  }, []);
+    if (loading === "fulfilled") {
+      setSection(sections);
+    }
+  }, [loading]);
 
   const postStandard = async (updatdStandard, updatedSectionsId) => {
     const updatedData = {
@@ -53,22 +41,22 @@ const StandardListPage = () => {
       sections: updatedSectionsId,
     };
 
-    try {
-      const response = await instance.put(
-        "/standard/" + value._id,
-        updatedData
-      );
+    // try {
+    //   const response = await instance.put(
+    //     "/standard/" + value._id,
+    //     updatedData
+    //   );
 
-      if (response.data.status === "failed") {
-        return response;
-      }
+    //   if (response.data.status === "failed") {
+    //     return response;
+    //   }
 
-      window.alert(response.data.message);
-      setUpdatedData(response.data.updataddata);
-      setIsOpen(false);
-    } catch (error) {
-      console.error("Error creating data:", error);
-    }
+    //   window.alert(response.data.message);
+    //   setUpdatedData(response.data.updataddata);
+    //   setIsOpen(false);
+    // } catch (error) {
+    //   console.error("Error creating data:", error);
+    // }
   };
 
   const openModal = (data) => {
@@ -135,11 +123,11 @@ const StandardListPage = () => {
                       id="multiple-limit-tags"
                       options={section}
                       value={optionSelected}
-                      getOptionLabel={(option) => option.section}
+                      getOptionLabel={(option) => option.name}
                       filterSelectedOptions
                       onChange={handleOptionChange}
                       isOptionEqualToValue={(option, value) =>
-                        option?._id === value?._id
+                        option?.id === value?.id
                       }
                       renderInput={(params) => (
                         <TextField {...params} placeholder="section" />

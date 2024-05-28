@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { useForm } from "react-hook-form";
-import { toast } from "react-toastify";
-
+import { createStandard } from "../../../redux/standard.slice";
 import {
   Box,
   Button,
@@ -12,14 +11,14 @@ import {
   CardContent,
   CardHeader,
   Divider,
-  Autocomplete,
   TextField,
 } from "@mui/material";
 
-import useHttpErrorHandler from "../../../hooks/useHttpErrorHandler";
-import { fetchData, postData, updateDataById } from "../../../redux/http-slice";
-import { authActions } from "../../../redux/auth-slice";
 import styles from "./StandardForm.module.css";
+import {
+  updateStandard,
+  fetchAllStanderd,
+} from "../../../redux/standard.slice";
 
 const StandardForm = ({ editedData }) => {
   const {
@@ -34,86 +33,56 @@ const StandardForm = ({ editedData }) => {
 
   const [editValue, setEditValue] = useState({
     id: "",
-    standard: null,
-    section: null,
+    name: null,
+    division: null,
   });
-  const [section, setSection] = useState([]);
-  const [selectedOptions, setSelectedOptions] = useState();
-  const handleHttpError = useHttpErrorHandler();
-
-  const { data, Loading } = useSelector((state) => state.httpRequest);
 
   useEffect(() => {
     if (editedData) {
-      setEditValue((prevState) => ({ ...prevState, id: editedData?._id }));
-      setValue("standard", editedData?.standard);
-      setSelectedOptions(editedData?.sections);
+      setEditValue((prevState) => ({ ...prevState, id: editedData?.id }));
+      setValue("name", editedData?.name);
+      setValue("division", editedData?.division);
     }
   }, [editedData, setValue]);
 
-  useEffect(() => {
-    if (!Loading && data) {
-      setSection(data);
-    }
-  }, [Loading, data]);
-
-  useEffect(() => {
-    const fetchsection = async () => {
-      try {
-        await dispatch(fetchData({ path: "/section/all" })).unwrap();
-      } catch (error) {
-        if (error?.status === 401 || error?.status === 500) {
-          toast.error("Please login again!", {
-            position: toast.POSITION.BOTTOM_CENTER,
-            autoClose: 2000,
-            hideProgressBar: true,
-            theme: "colored",
-          });
-          // dispatch(authActions.logout());
-        } else {
-          toast.error(error?.message || "Something went wrong", {
-            position: toast.POSITION.BOTTOM_CENTER,
-            autoClose: 2000,
-            hideProgressBar: true,
-            theme: "colored",
-          });
-        }
-      }
-    };
-    fetchsection();
-  }, [dispatch]);
-
   const onSubmit = async (data) => {
-    const sectionId = selectedOptions?.map((section) => section._id);
-
+    const divisionArray = data?.division?.split(",");
+    const divisionMap = divisionArray.map((division) => {
+      return {
+        name: division,
+      };
+    });
+    console.log("division array", divisionMap);
     const formData = {
-      ...data,
-      sectionId: sectionId,
+      name: data.name,
+      division: divisionMap,
     };
     try {
       if (editValue?.id !== "") {
-        await dispatch(
-          updateDataById({
-            path: "/standard",
-            id: editValue?.id,
-            data: formData,
-          })
-        ).unwrap();
+        const editData = {
+          id: editValue?.id,
+          data: formData,
+        };
+        await dispatch(updateStandard(editData))
+          .unwrap()
+          .then(() => {
+            fetchAllStanderd();
+          });
       } else {
-        await dispatch(
-          postData({ path: "/standard", data: formData })
-        ).unwrap();
+        await dispatch(createStandard(formData))
+          .unwrap()
+          .then(() => {
+            fetchAllStanderd();
+          });
       }
       setEditValue({ id: "", section: "" });
       navigate("/standard-list");
-    } catch (error) {
-      handleHttpError(error);
-    }
+    } catch (error) {}
   };
 
-  const handleOptionChange = (event, value) => {
-    setSelectedOptions(value);
-  };
+  // const handleDivisionChange = (event, value) => {
+  //   setSelectedOptions(value);
+  // };
 
   return (
     <>
@@ -132,30 +101,20 @@ const StandardForm = ({ editedData }) => {
                   label="Standard"
                   variant="outlined"
                   helperText={errors.standard ? "Field is required!" : ""}
-                  {...register("standard", { required: true })}
+                  {...register("name", { required: true })}
                 />
               </Grid>
 
               <Grid item md={6} sm={12} xs={12}>
-                <Autocomplete
-                  multiple
-                  fullWidth
-                  disableCloseOnSelect
+                <TextField
+                  className={styles.textField}
+                  error={errors.standard ? true : false}
+                  id="outlined-basic"
                   size="small"
-                  id="Section"
-                  value={selectedOptions || []}
-                  label="Section"
-                  name="section"
-                  options={section}
-                  getOptionLabel={(option) => option.section}
-                  isOptionEqualToValue={(option, value) =>
-                    option?._id === value?._id
-                  }
-                  filterSelectedOptions
-                  onChange={handleOptionChange}
-                  renderInput={(params) => (
-                    <TextField {...params} label="Section" />
-                  )}
+                  label="Division"
+                  variant="outlined"
+                  helperText={errors.standard ? "Field is required!" : ""}
+                  {...register("division", { required: true })}
                 />
               </Grid>
             </Grid>

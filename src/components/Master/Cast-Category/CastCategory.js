@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useDispatch } from "react-redux";
-
 import {
   Box,
   Button,
@@ -12,12 +11,14 @@ import {
   Divider,
   TextField,
 } from "@mui/material";
-
 import useHttpErrorHandler from "../../../hooks/useHttpErrorHandler";
-import { postData, updateDataById } from "../../../redux/http-slice";
 import CastCategoryList from "./CastCategoryList";
 import classes from "./styles.module.css";
-
+import {
+  createCastCategory,
+  fetchCastCategory,
+  updateCastCategory,
+} from "../../../redux/cast.category.slice";
 const CastCategory = () => {
   const {
     register,
@@ -28,12 +29,14 @@ const CastCategory = () => {
   } = useForm();
 
   const [editValue, setEditValue] = useState({ id: "", name: "" });
+  const [updatedData, setUpdatedData] = useState({});
   const dispatch = useDispatch();
   const handleHttpError = useHttpErrorHandler();
 
   const onEditHandler = (editedData) => {
-    setEditValue({ id: editedData?._id, name: editedData?.name });
+    setEditValue({ id: editedData?.id, name: editedData?.name });
     setValue("name", editedData?.title);
+    setUpdatedData(editedData);
     window.scrollTo({
       top: 0,
       behavior: "smooth",
@@ -46,10 +49,14 @@ const CastCategory = () => {
     try {
       if (id !== "" && name !== "") {
         await dispatch(
-          updateDataById({ path: "/Cast-category", id: id, data: name })
-        ).unwrap();
+          updateCastCategory({ ...updatedData, name: data.name })
+        ).then(() => {
+          dispatch(fetchCastCategory());
+        });
       } else {
-        await dispatch(postData({ path: "/Cast-category", data })).unwrap();
+        await dispatch(createCastCategory(data)).then(() =>
+          dispatch(fetchCastCategory())
+        );
       }
       reset();
       setEditValue({ id: "", name: "" });

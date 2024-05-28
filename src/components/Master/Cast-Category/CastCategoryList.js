@@ -1,9 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { toast } from "react-toastify";
-
-// import { RotatingLines } from "react-loader-spinner";
-
 import {
   Table,
   TableBody,
@@ -12,93 +8,29 @@ import {
   TableContainer,
   TableRow,
   Button,
-  TablePagination,
   Divider,
   Typography,
 } from "@mui/material";
 
-import { authActions } from "../../../redux/auth-slice";
 import {
-  fetchDataWithPagination,
-  deleteDataById,
-} from "../../../redux/http-slice";
+  deleteCastCategory,
+  fetchCastCategory,
+} from "../../../redux/cast.category.slice";
+
 import useHttpErrorHandler from "../../../hooks/useHttpErrorHandler";
 import Modal from "../../UI/Modal";
-import TableSkeleton from "../../UI/Skeleton";
 import styles from "./styles.module.css";
-
 const CastCategoryList = ({ onEditHandler }) => {
-  const [page, setPage] = useState({ currentPage: 0, totaltems: 0 });
-  const [rowsPerPage, setRowsPerPage] = React.useState(10);
-  const [index, setIndex] = useState(1);
+  const { castCategories } = useSelector((state) => state.castCategory);
   const [category, setCategory] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [categoryIdToDelete, setCategoryIdToDelete] = useState(null);
-
   const handleHttpError = useHttpErrorHandler();
-
   const dispatch = useDispatch();
 
-  const { pageData, Loading, response, deletedData, updatedData } = useSelector(
-    (state) => state.httpRequest
-  );
-
-  //   console.log(pageData);
-
   useEffect(() => {
-    if (!Loading && pageData) {
-      setPage({ ...page, totaltems: pageData?.totalData });
-      setCategory(pageData?.data);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [Loading, pageData]);
-
-  const path = `/cast-category?page=${page.currentPage}&perPage=${rowsPerPage}`;
-
-  useEffect(() => {
-    const fetchcategory = async () => {
-      try {
-        const startIndex = page.currentPage * rowsPerPage + 1;
-        setIndex(startIndex);
-        await dispatch(fetchDataWithPagination({ path })).unwrap();
-      } catch (error) {
-        if (error?.status === 401 || error?.status === 500) {
-          toast.error("Please login again!", {
-            position: toast.POSITION.BOTTOM_CENTER,
-            autoClose: 2000,
-            hideProgressBar: true,
-            theme: "colored",
-          });
-          // dispatch(authActions.logout());
-        } else {
-          toast.error(error?.message || "Something went wrong", {
-            position: toast.POSITION.BOTTOM_CENTER,
-            autoClose: 2000,
-            hideProgressBar: true,
-            theme: "colored",
-          });
-        }
-      }
-    };
-    fetchcategory();
-  }, [
-    dispatch,
-    page.currentPage,
-    rowsPerPage,
-    path,
-    response.data,
-    deletedData,
-    updatedData,
-  ]);
-
-  const handleChangePage = (event, newPage) => {
-    setPage((prevState) => ({ ...prevState, currentPage: newPage }));
-  };
-
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(+event.target.value);
-    setPage((prevState) => ({ ...prevState, currentPage: 0 }));
-  };
+    dispatch(fetchCastCategory());
+  }, [dispatch]);
 
   // filter data for edit
   const filterList = (index) => {
@@ -116,12 +48,7 @@ const CastCategoryList = ({ onEditHandler }) => {
   // delete confirmation handler modal
   const handleConfirmDeleteHandler = async () => {
     try {
-      await dispatch(
-        deleteDataById({
-          path: "/cast-category",
-          id: categoryIdToDelete,
-        })
-      ).unwrap();
+      await dispatch(deleteCastCategory(categoryIdToDelete)).unwrap();
       setIsModalOpen(false);
     } catch (error) {
       setIsModalOpen(false);
@@ -167,78 +94,65 @@ const CastCategoryList = ({ onEditHandler }) => {
           </div>
         </Modal>
       )}
-      {!Loading ? (
-        <TableContainer>
-          <Table sx={{ minWidth: 250 }} size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell className={styles["bold-cell"]}>#</TableCell>
-                <TableCell align="left" className={styles["bold-cell"]}>
-                  category
-                </TableCell>
-                <TableCell align="left" className={styles["bold-cell"]}>
-                  Action
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {category && category.length > 0 ? (
-                category.map((row, indx) => (
-                  <TableRow
-                    hover
-                    key={row?._id}
-                    sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-                  >
-                    <TableCell component="th" scope="row">
-                      {index + indx}
-                    </TableCell>
-                    <TableCell align="left">{row?.name}</TableCell>
-                    <TableCell align="left">
-                      <Button
-                        variant="text"
-                        onClick={() => {
-                          onEditHandler(row);
-                          filterList(indx);
-                        }}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        variant="text"
-                        onClick={() => {
-                          deleteHandler(row?._id);
-                        }}
-                      >
-                        Delete
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={5} align="center">
-                    No data available
+
+      <TableContainer>
+        <Table sx={{ minWidth: 250 }} size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell className={styles["bold-cell"]}>#</TableCell>
+              <TableCell align="left" className={styles["bold-cell"]}>
+                category
+              </TableCell>
+              <TableCell align="left" className={styles["bold-cell"]}>
+                Action
+              </TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {castCategories && castCategories.length > 0 ? (
+              castCategories.map((row, index) => (
+                <TableRow
+                  hover
+                  key={row?._id}
+                  sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+                >
+                  <TableCell component="th" scope="row">
+                    {index + 1}
+                  </TableCell>
+                  <TableCell align="left">{row?.name}</TableCell>
+                  <TableCell align="left">
+                    <Button
+                      variant="text"
+                      onClick={() => {
+                        onEditHandler(row);
+                        filterList(index);
+                      }}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      variant="text"
+                      onClick={() => {
+                        deleteHandler(row?.id);
+                      }}
+                    >
+                      Delete
+                    </Button>
                   </TableCell>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      ) : (
-        <TableSkeleton />
-      )}
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={5} align="center">
+                  No data available
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
+
       <Divider />
-      {!Loading && (
-        <TablePagination
-          rowsPerPageOptions={[10, 25, 100]}
-          component="div"
-          count={page.totaltems || 0}
-          rowsPerPage={rowsPerPage}
-          page={page.currentPage}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-        />
-      )}
     </>
   );
 };

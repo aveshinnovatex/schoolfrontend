@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { MultiSelect } from "react-multi-select-component";
 import { toast } from "react-toastify";
+import { createStudent } from "../../redux/student.slice";
 
 import {
   Grid,
@@ -178,126 +179,126 @@ const StudentForm = (stuData) => {
   });
 
   // fetch session
-  useEffect(() => {
-    const fetchSession = async () => {
-      try {
-        const sessionResp = await instance.get("/session/all");
+  // useEffect(() => {
+  //   const fetchSession = async () => {
+  //     try {
+  //       const sessionResp = await instance.get("/session/all");
 
-        const data = sessionResp?.data?.data;
-        setData((prevState) => ({
-          ...prevState,
-          sessions: data,
-        }));
-      } catch (error) {
-        if (
-          error?.response?.data?.status === 401 ||
-          error?.response?.data?.status === 500
-        ) {
-          toast.error("Please login again!", {
-            position: toast.POSITION.BOTTOM_CENTER,
-            autoClose: 2000,
-            hideProgressBar: true,
-            theme: "colored",
-          });
-          // dispatch(authActions.logout());
-        } else {
-          toast.error(error?.message || "Something went wrong", {
-            position: toast.POSITION.BOTTOM_CENTER,
-            autoClose: 2000,
-            hideProgressBar: true,
-            theme: "colored",
-          });
-        }
-      }
-    };
-    fetchSession();
-  }, [dispatch]);
+  //       const data = sessionResp?.data?.data;
+  //       setData((prevState) => ({
+  //         ...prevState,
+  //         sessions: data,
+  //       }));
+  //     } catch (error) {
+  //       if (
+  //         error?.response?.data?.status === 401 ||
+  //         error?.response?.data?.status === 500
+  //       ) {
+  //         toast.error("Please login again!", {
+  //           position: toast.POSITION.BOTTOM_CENTER,
+  //           autoClose: 2000,
+  //           hideProgressBar: true,
+  //           theme: "colored",
+  //         });
+  //         // dispatch(authActions.logout());
+  //       } else {
+  //         toast.error(error?.message || "Something went wrong", {
+  //           position: toast.POSITION.BOTTOM_CENTER,
+  //           autoClose: 2000,
+  //           hideProgressBar: true,
+  //           theme: "colored",
+  //         });
+  //       }
+  //     }
+  //   };
+  //   fetchSession();
+  // }, [dispatch]);
 
   // fetch standard
-  useEffect(() => {
-    const fetchStandard = async () => {
-      try {
-        const standardResp = await instance.get(
-          `/standard/all?search=${JSON.stringify({
-            session: selectedData?.session?.name,
-          })}`
-        );
+  // useEffect(() => {
+  //   const fetchStandard = async () => {
+  //     try {
+  //       const standardResp = await instance.get(
+  //         `/standard/all?search=${JSON.stringify({
+  //           session: selectedData?.session?.name,
+  //         })}`
+  //       );
 
-        const data = standardResp?.data?.data;
-        setData((prevState) => ({
-          ...prevState,
-          standard: data,
-        }));
-      } catch (error) {
-        if (
-          error?.response?.data?.status === 401 ||
-          error?.response?.data?.status === 500
-        ) {
-          toast.error("Please login again!", {
-            position: toast.POSITION.BOTTOM_CENTER,
-            autoClose: 2000,
-            hideProgressBar: true,
-            theme: "colored",
-          });
-          // dispatch(authActions.logout());
-        } else {
-          toast.error(error?.message || "Something went wrong", {
-            position: toast.POSITION.BOTTOM_CENTER,
-            autoClose: 2000,
-            hideProgressBar: true,
-            theme: "colored",
-          });
-        }
-      }
-    };
+  //       const data = standardResp?.data?.data;
+  //       setData((prevState) => ({
+  //         ...prevState,
+  //         standard: data,
+  //       }));
+  //     } catch (error) {
+  //       if (
+  //         error?.response?.data?.status === 401 ||
+  //         error?.response?.data?.status === 500
+  //       ) {
+  //         toast.error("Please login again!", {
+  //           position: toast.POSITION.BOTTOM_CENTER,
+  //           autoClose: 2000,
+  //           hideProgressBar: true,
+  //           theme: "colored",
+  //         });
+  //         // dispatch(authActions.logout());
+  //       } else {
+  //         toast.error(error?.message || "Something went wrong", {
+  //           position: toast.POSITION.BOTTOM_CENTER,
+  //           autoClose: 2000,
+  //           hideProgressBar: true,
+  //           theme: "colored",
+  //         });
+  //       }
+  //     }
+  //   };
 
-    if (selectedData?.session) {
-      fetchStandard();
-    }
-  }, [dispatch, selectedData?.session]);
+  //   if (selectedData?.session) {
+  //     fetchStandard();
+  //   }
+  // }, [dispatch, selectedData?.session]);
 
   // fetch fee discount
-  useEffect(() => {
-    const fetchFeeDiscount = async () => {
-      try {
-        const feeDiscountResp = await instance.get(
-          `/fee-discount/all?search=${JSON.stringify({
-            session: selectedData?.session?.name,
-          })}`
-        );
+  // useEffect(() => {
+  //   const fetchFeeDiscount = async () => {
+  //     try {
+  //       const feeDiscountResp = await instance.get(
+  //         `/fee-discount/all?search=${JSON.stringify({
+  //           session: selectedData?.session?.name,
+  //         })}`
+  //       );
 
-        const data = feeDiscountResp?.data?.data;
-        setData((prevState) => ({
-          ...prevState,
-          feeDiscount: data,
-        }));
-      } catch (error) {
-        if (
-          error?.response?.data?.status === 401 ||
-          error?.response?.data?.status === 500
-        ) {
-          toast.error("Please login again!", {
-            position: toast.POSITION.BOTTOM_CENTER,
-            autoClose: 2000,
-            hideProgressBar: true,
-            theme: "colored",
-          });
-          // dispatch(authActions.logout());
-        } else {
-          toast.error(error?.message || "Something went wrong", {
-            position: toast.POSITION.BOTTOM_CENTER,
-            autoClose: 2000,
-            hideProgressBar: true,
-            theme: "colored",
-          });
-        }
-      }
-    };
+  //       const data = feeDiscountResp?.data?.data;
+  //       setData((prevState) => ({
+  //         ...prevState,
+  //         feeDiscount: data,
+  //       }));
+  //     } catch (error) {
+  //       if (
+  //         error?.response?.data?.status === 401 ||
+  //         error?.response?.data?.status === 500
+  //       ) {
+  //         toast.error("Please login again!", {
+  //           position: toast.POSITION.BOTTOM_CENTER,
+  //           autoClose: 2000,
+  //           hideProgressBar: true,
+  //           theme: "colored",
+  //         });
+  //         // dispatch(authActions.logout());
+  //       } else {
+  //         toast.error(error?.message || "Something went wrong", {
+  //           position: toast.POSITION.BOTTOM_CENTER,
+  //           autoClose: 2000,
+  //           hideProgressBar: true,
+  //           theme: "colored",
+  //         });
+  //       }
+  //     }
+  //   };
 
-    if (selectedData?.session) {
-      fetchFeeDiscount();
-    }
-  }, [dispatch, selectedData?.session]);
+  //   if (selectedData?.session) {
+  //     fetchFeeDiscount();
+  //   }
+  // }, [dispatch, selectedData?.session]);
 
   // setting fetched data
   const getData = useCallback(async () => {
@@ -470,91 +471,91 @@ const StudentForm = (stuData) => {
   }, [selectedData?.session, selectedData?.section, selectedData?.standard]);
 
   // fetch routes
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const routsResp = await instance.get("/routes/all");
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     try {
+  //       const routsResp = await instance.get("/routes/all");
 
-        setData((prevData) => ({
-          ...prevData,
-          vehiclesRoutes: routsResp.data.data,
-        }));
-      } catch (error) {
-        if (
-          error?.response?.data?.status === 401 ||
-          error?.response?.data?.status === 500
-        ) {
-          toast.error("Please login again!", {
-            position: toast.POSITION.BOTTOM_CENTER,
-            autoClose: 2000,
-            hideProgressBar: true,
-            theme: "colored",
-          });
-          // dispatch(authActions.logout());
-        } else {
-          toast.error(
-            error?.response?.data?.message || "Something went wrong",
-            {
-              position: toast.POSITION.BOTTOM_CENTER,
-              autoClose: 2000,
-              hideProgressBar: true,
-              theme: "colored",
-            }
-          );
-        }
-      }
-    };
-    fetchData();
-  }, [dispatch]);
+  //       setData((prevData) => ({
+  //         ...prevData,
+  //         vehiclesRoutes: routsResp.data.data,
+  //       }));
+  //     } catch (error) {
+  //       if (
+  //         error?.response?.data?.status === 401 ||
+  //         error?.response?.data?.status === 500
+  //       ) {
+  //         toast.error("Please login again!", {
+  //           position: toast.POSITION.BOTTOM_CENTER,
+  //           autoClose: 2000,
+  //           hideProgressBar: true,
+  //           theme: "colored",
+  //         });
+  //         // dispatch(authActions.logout());
+  //       } else {
+  //         toast.error(
+  //           error?.response?.data?.message || "Something went wrong",
+  //           {
+  //             position: toast.POSITION.BOTTOM_CENTER,
+  //             autoClose: 2000,
+  //             hideProgressBar: true,
+  //             theme: "colored",
+  //           }
+  //         );
+  //       }
+  //     }
+  //   };
+  //   fetchData();
+  // }, [dispatch]);
 
   // fetch stoppagge or driver
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const routeId = selectedData?.vehiclesRoute?._id;
-        const filterData = {
-          route: routeId,
-        };
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     try {
+  //       const routeId = selectedData?.vehiclesRoute?._id;
+  //       const filterData = {
+  //         route: routeId,
+  //       };
 
-        const vehicleId = selectedData?.vehiclesRoute?.vehicle;
+  //       const vehicleId = selectedData?.vehiclesRoute?.vehicle;
 
-        const [response, driverData] = await Promise.all([
-          instance.get("/stoppage/all?data=" + JSON.stringify(filterData)),
-          instance.get(
-            "/vehicle-driver/all?search=" +
-              JSON.stringify({ vehicle: vehicleId })
-          ),
-        ]);
+  //       const [response, driverData] = await Promise.all([
+  //         instance.get("/stoppage/all?data=" + JSON.stringify(filterData)),
+  //         instance.get(
+  //           "/vehicle-driver/all?search=" +
+  //             JSON.stringify({ vehicle: vehicleId })
+  //         ),
+  //       ]);
 
-        const data = driverData?.data?.data;
-        setVehicleDriverData(data[0]);
+  //       const data = driverData?.data?.data;
+  //       setVehicleDriverData(data[0]);
 
-        const stoppageData = response.data.data;
+  //       const stoppageData = response.data.data;
 
-        setData((prevData) => ({
-          ...prevData,
-          stoppage: stoppageData,
-        }));
-      } catch (error) {
-        toast.error(error?.response?.data?.message || "Something went wrong", {
-          position: toast.POSITION.BOTTOM_CENTER,
-          autoClose: 2000,
-          hideProgressBar: true,
-          theme: "colored",
-        });
-      }
-    };
+  //       setData((prevData) => ({
+  //         ...prevData,
+  //         stoppage: stoppageData,
+  //       }));
+  //     } catch (error) {
+  //       toast.error(error?.response?.data?.message || "Something went wrong", {
+  //         position: toast.POSITION.BOTTOM_CENTER,
+  //         autoClose: 2000,
+  //         hideProgressBar: true,
+  //         theme: "colored",
+  //       });
+  //     }
+  //   };
 
-    if (selectedData?.vehiclesRoute) {
-      fetchData();
-    } else {
-      setData((prevState) => ({
-        ...prevState,
-        stoppage: [],
-      }));
-      setVehicleDriverData();
-    }
-  }, [dispatch, selectedData?.vehiclesRoute]);
+  //   if (selectedData?.vehiclesRoute) {
+  //     fetchData();
+  //   } else {
+  //     setData((prevState) => ({
+  //       ...prevState,
+  //       stoppage: [],
+  //     }));
+  //     setVehicleDriverData();
+  //   }
+  // }, [dispatch, selectedData?.vehiclesRoute]);
 
   const handleRouteChange = () => {
     setSelectedData((prevState) => ({
@@ -667,8 +668,8 @@ const StudentForm = (stuData) => {
       postAPIResponse?.postFeeRecordResponse?.length > 0
     ) {
       addFeeDiscount().then((res) => {
-        dispatch(httpActions.clearResponse());
-        navigate("/student-list");
+        // dispatch(httpActions.clearResponse());
+        // navigate("/student-list");
       });
     }
   }, [
@@ -792,8 +793,8 @@ const StudentForm = (stuData) => {
     ) {
       postFeeRecords().then((res) => {
         if (selectedData?.feeDiscount?.length === 0) {
-          dispatch(httpActions.clearResponse());
-          navigate("/student-list");
+          // dispatch(httpActions.clearResponse());
+          // navigate("/student-list");
         } else if (selectedData?.feeDiscount?.length > 0) {
           setPostAPIResponse((prevState) => ({
             ...prevState,
@@ -1024,10 +1025,11 @@ const StudentForm = (stuData) => {
       formData.append("data", JSON.stringify(postFormData));
 
       await dispatch(
-        postDataWithFile({ path: "/student", data: formData })
+        createStudent(formData)
+        // postDataWithFile({ path: "/student", data: formData })
       ).unwrap();
     } catch (error) {
-      httpErrorHandler(error);
+      // httpErrorHandler(error);
     }
   };
 

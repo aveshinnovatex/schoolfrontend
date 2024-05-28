@@ -1,93 +1,45 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { toast } from "react-toastify";
 import { useDispatch, useSelector } from "react-redux";
-
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableHead from "@mui/material/TableHead";
 import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableRow from "@mui/material/TableRow";
-import TablePagination from "@mui/material/TablePagination";
 import IconButton from "@mui/material/IconButton";
 import DeleteIcon from "@mui/icons-material/Delete";
-import VisibilityIcon from "@mui/icons-material/Visibility";
 import BorderColorIcon from "@mui/icons-material/BorderColor";
-
 import { Divider, Grid, Card, CardContent, CardHeader } from "@mui/material";
-
 import styles from "./StateList.module.css";
-import { authActions } from "../../redux/auth-slice";
-import {
-  fetchDataWithPagination,
-  deleteDataById,
-} from "../../redux/http-slice";
-import TableSkeleton from "../UI/Skeleton";
-
+import { fetchState, deleteState } from "../../redux/state.slice";
 const StateList = ({ onClick, newData }) => {
-  const [page, setPage] = useState({ currentPage: 0, totaltems: 0 });
-  const [rowsPerPage, setRowsPerPage] = React.useState(10);
-  //   const [searchQuery, setSearchQuery] = useState("");
-  const [index, setIndex] = useState(1);
-  const [state, setState] = useState([]);
+  const { states, loading } = useSelector((state) => state.state);
   const [updatedData, setUpdatedData] = useState();
-
   const dispatch = useDispatch();
-
-  const { pageData, Loading, deletedData } = useSelector(
-    (state) => state.httpRequest
-  );
 
   useEffect(() => {
     setUpdatedData({ ...newData });
   }, [newData]);
+
+  useEffect(() => {
+    dispatch(fetchState());
+  }, [dispatch]);
 
   const deleteHandler = async (id, index) => {
     const proceed = window.confirm("Are you really want to delete?");
 
     if (proceed) {
       try {
-        await dispatch(
-          deleteDataById({
-            path: "/state",
-            id: id,
-          })
-        ).unwrap();
-
-        // change page no if no document available after delete
-        if (state.length === 1 && page?.currentPage !== 0) {
-          setPage((prevState) => ({
-            ...prevState,
-            currentPage: page?.currentPage - 1,
-          }));
-        }
+        await dispatch(deleteState(id))
+          .unwrap()
+          .then(() => {
+            dispatch(fetchState());
+          });
       } catch (error) {
-        toast.error(error?.message, {
-          position: toast.POSITION.BOTTOM_CENTER,
-          autoClose: 2000,
-          hideProgressBar: true,
-          theme: "colored",
-        });
+        console.log(error);
       }
     }
-  };
-
-  useEffect(() => {
-    if (!Loading && pageData) {
-      setPage({ ...page, totaltems: pageData?.totalData });
-      setState(pageData?.data);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [Loading, pageData]);
-
-  const handleChangePage = (event, newPage) => {
-    setPage((prevState) => ({ ...prevState, currentPage: newPage }));
-  };
-
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(+event.target.value);
-    setPage((prevState) => ({ ...prevState, currentPage: 0 }));
   };
 
   const editHandler = (data, index) => {
@@ -113,79 +65,59 @@ const StateList = ({ onClick, newData }) => {
           <CardHeader subheader="All States list" title="States List" />
           <Divider />
           <CardContent>
-            {!Loading ? (
-              <TableContainer>
-                <Table
-                  sx={{ minWidth: 500 }}
-                  aria-label="sticky table"
-                  size="small"
-                >
-                  <TableHead>
+            <TableContainer>
+              <Table
+                sx={{ minWidth: 500 }}
+                aria-label="sticky table"
+                size="small"
+              >
+                <TableHead>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: "bold" }}>#</TableCell>
+                    <TableCell sx={{ fontWeight: "bold" }}>Name</TableCell>
+                    <TableCell sx={{ fontWeight: "bold" }}>Action</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {states && states?.length > 0 ? (
+                    states?.map((data, index) => {
+                      return (
+                        <TableRow
+                          hover
+                          role="checkbox"
+                          tabIndex={-1}
+                          key={data?._id}
+                        >
+                          <TableCell>{index + 1}</TableCell>
+                          <TableCell>{data?.name}</TableCell>
+                          <TableCell>
+                            <IconButton
+                              aria-label="delete"
+                              onClick={() => deleteHandler(data?.id, index)}
+                            >
+                              <DeleteIcon className={styles["delete-button"]} />
+                            </IconButton>
+                            <IconButton
+                              onClick={() => editHandler(data, index)}
+                            >
+                              <BorderColorIcon />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  ) : (
                     <TableRow>
-                      <TableCell sx={{ fontWeight: "bold" }}>#</TableCell>
-                      <TableCell sx={{ fontWeight: "bold" }}>Name</TableCell>
-                      <TableCell sx={{ fontWeight: "bold" }}>Action</TableCell>
+                      <TableCell colSpan={3} align="center">
+                        No data available
+                      </TableCell>
                     </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {state && state?.length > 0 ? (
-                      state?.map((data, idx) => {
-                        return (
-                          <TableRow
-                            hover
-                            role="checkbox"
-                            tabIndex={-1}
-                            key={data?._id}
-                          >
-                            <TableCell>{index + idx}</TableCell>
-                            <TableCell>{data?.name}</TableCell>
-                            <TableCell>
-                              <IconButton
-                                aria-label="delete"
-                                onClick={() => deleteHandler(data?._id, idx)}
-                              >
-                                <DeleteIcon
-                                  className={styles["delete-button"]}
-                                />
-                              </IconButton>
-                              <IconButton
-                                onClick={() => editHandler(data, index)}
-                              >
-                                <BorderColorIcon />
-                              </IconButton>
-                              <IconButton>
-                                <VisibilityIcon />
-                              </IconButton>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={3} align="center">
-                          No data available
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            ) : (
-              <TableSkeleton />
-            )}
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
           </CardContent>
           <Divider />
-          {!Loading && (
-            <TablePagination
-              rowsPerPageOptions={[10, 25, 100]}
-              component="div"
-              count={page.totaltems || 0}
-              rowsPerPage={rowsPerPage}
-              page={page.currentPage}
-              onPageChange={handleChangePage}
-              onRowsPerPageChange={handleChangeRowsPerPage}
-            />
-          )}
         </Card>
       </Grid>
     </>

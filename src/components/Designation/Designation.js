@@ -51,14 +51,14 @@ const Designation = () => {
         ).unwrap();
       } else {
         // await dispatch(
-        //   postData("http://njhtest.marwariplus.com/api/DesignationApi", data, {
+        //   postData("https://schoolapi.marwariplus.com/api/DesignationApi", data, {
         //     headers: {
         //       Authorization:
         //         "bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTU5NTU1NzcsImlzcyI6Imh0dHBzOi8vbG9jYWxob3N0OjQ0MzQ2IiwiYXVkIjoiaHR0cHM6Ly9sb2NhbGhvc3Q6NDQzNDYifQ.Am0jfu6dAyuf61zNt-jf1cY96u6VL9HJn-jpj_6jkaQ",
         //     },
         //   })
         // ).unwrap();
-        const myPath = "http://njhtest.marwariplus.com/api/DesignationApi";
+        const myPath = "https://schoolapi.marwariplus.com/api/DesignationApi";
         const response = await instance.post(`${myPath}`, data, {
           headers: {
             Authorization:

@@ -1,8 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import { toast } from "react-toastify";
-
+import { createState } from "../../redux/state.slice";
 import {
   Grid,
   Card,
@@ -12,8 +11,8 @@ import {
   TextField,
 } from "@mui/material";
 
-import instance from "../../util/axios/config";
 import styles from "./StateForm.module.css";
+import { useDispatch } from "react-redux";
 
 const StateForm = () => {
   const {
@@ -21,28 +20,15 @@ const StateForm = () => {
     handleSubmit,
     formState: { errors },
   } = useForm();
-
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const postState = async (data) => {
-    console.log("data", data);
     try {
-      const response = await instance.post("/api/StateApi", data);
-      console.log("=====response=========", response);
-      // if (response.data.status === "failed") {
-      //   return response;
-      // }
-
-      // toast.success(response?.data?.message, {
-      //   position: toast.POSITION.BOTTOM_CENTER,
-      //   autoClose: 2000,
-      //   hideProgressBar: true,
-      //   theme: "colored",
-      // });
-
-      // navigate("/state-list");
+      dispatch(createState(data));
+      navigate("/state-list");
     } catch (error) {
-      console.error("Error creating data:", error);
+      console.error(error);
     }
   };
 

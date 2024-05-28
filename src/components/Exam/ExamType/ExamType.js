@@ -49,7 +49,7 @@ const ExamType = () => {
       const token = localStorage.getItem("token");
       console.log("avesh token", token);
       const response = await axios.post(
-        "http://njhtest.marwariplus.com/api/ExamTypeApi",
+        "https://schoolapi.marwariplus.com/api/ExamTypeApi",
         data,
         {
           headers: {

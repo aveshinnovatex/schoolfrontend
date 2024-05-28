@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
-
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableHead from "@mui/material/TableHead";
@@ -20,20 +18,21 @@ import {
   CardHeader,
   Divider,
   Typography,
-  List,
-  ListItem,
-  ListItemText,
 } from "@mui/material";
 
 import useHttpErrorHandler from "../../../hooks/useHttpErrorHandler";
-import { authActions } from "../../../redux/auth-slice";
-import { deleteDataById } from "../../../redux/http-slice";
-import instance from "../../../util/axios/config";
 import styles from "./StandardList.module.css";
 import Modal from "../../UI/Modal";
 import TableSkeleton from "../../UI/Skeleton";
+import {
+  fetchAllStanderd,
+  deleteStandard,
+} from "../../../redux/standard.slice";
 
 const StandardList = ({ newData }) => {
+  const { standards: standardData, loading } = useSelector(
+    (state) => state.standard
+  );
   const [page, setPage] = useState({ currentPage: 0, totaltems: 0 });
   const [rowsPerPage, setRowsPerPage] = React.useState(20);
   //   const [searchQuery, setSearchQuery] = useState("");
@@ -42,52 +41,22 @@ const StandardList = ({ newData }) => {
   const [updatedData, setUpdatedData] = useState();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [standardIdToDelete, setStandardIdToDelete] = useState(null);
-
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const handleHttpError = useHttpErrorHandler();
 
-  const { Loading, deletedData } = useSelector((state) => state.httpRequest);
-
   useEffect(() => {
     setUpdatedData({ ...newData });
   }, [newData]);
-
-  const path = `/standard?page=${page.currentPage}&perPage=${rowsPerPage}`;
-
+  // const path = `/standard?page=${page.currentPage}&perPage=${rowsPerPage}`;
   useEffect(() => {
-    const fetchStandard = async () => {
-      try {
-        const startIndex = page.currentPage * rowsPerPage + 1;
-        setIndex(startIndex);
-        const response = await instance.get(path);
-
-        setPage((prevState) => ({
-          ...prevState,
-          totaltems: response?.data?.totalData,
-        }));
-        setStandard(response?.data?.data || []);
-      } catch (error) {
-        if (error?.status === 401 || error?.status === 500) {
-          toast.error("Please login again!", {
-            position: toast.POSITION.BOTTOM_CENTER,
-            autoClose: 2000,
-            hideProgressBar: true,
-            theme: "colored",
-          });
-          // dispatch(authActions.logout());
-        } else {
-          toast.error(error?.message || "Something went wrong", {
-            position: toast.POSITION.BOTTOM_CENTER,
-            autoClose: 2000,
-            hideProgressBar: true,
-            theme: "colored",
-          });
-        }
-      }
-    };
-    fetchStandard();
-  }, [dispatch, page.currentPage, rowsPerPage, path, deletedData, updatedData]);
+    dispatch(fetchAllStanderd());
+  }, [dispatch]);
+  useEffect(() => {
+    if (loading === "fulfilled") {
+      setStandard(standardData);
+    }
+  }, [loading]);
 
   const handleChangePage = (event, newPage) => {
     setPage((prevState) => ({ ...prevState, currentPage: newPage }));
@@ -98,27 +67,21 @@ const StandardList = ({ newData }) => {
     setPage((prevState) => ({ ...prevState, currentPage: 0 }));
   };
 
-  // const editHandler = (data, index) => {
-  //   onClick({ data: data, index: index });
-  // };
-
   // delete account group
-  const deleteHandler = async (id) => {
+  const deleteHandler = async (data) => {
     setIsModalOpen(true);
-    setStandardIdToDelete(id);
+    setStandardIdToDelete(data);
   };
 
   // delete confirmation handler modal
   const handleConfirmDeleteHandler = async () => {
     try {
-      await dispatch(
-        deleteDataById({
-          path: "/standard",
-          id: standardIdToDelete,
-        })
-      ).unwrap();
+      await dispatch(deleteStandard(standardIdToDelete))
+        .unwrap()
+        .then(() => {
+          dispatch(fetchAllStanderd());
+        });
 
-      // change page no if no document available after delete
       if (standard.length === 1 && page?.currentPage !== 0) {
         setPage((prevState) => ({
           ...prevState,
@@ -196,7 +159,7 @@ const StandardList = ({ newData }) => {
           />
           <Divider />
           <CardContent>
-            {!Loading ? (
+            {loading === "fulfilled" ? (
               <TableContainer>
                 <Table
                   stickyHeader
@@ -222,30 +185,15 @@ const StandardList = ({ newData }) => {
                             hover
                             role="checkbox"
                             tabIndex={-1}
-                            key={data?._id}
+                            key={data?.id}
                           >
                             <TableCell>{index + idx}</TableCell>
-                            <TableCell>{data?.standard}</TableCell>
-                            <TableCell>
-                              <List sx={{ padding: "0px" }}>
-                                {data?.sections?.map((sec) => {
-                                  return (
-                                    <ListItem
-                                      key={sec?._id}
-                                      sx={{ padding: "0px" }}
-                                    >
-                                      <ListItemText sx={{ margin: "0px" }}>
-                                        {sec?.section}
-                                      </ListItemText>
-                                    </ListItem>
-                                  );
-                                })}
-                              </List>
-                            </TableCell>
+                            <TableCell>{data?.name}</TableCell>
+                            <TableCell>{data?.division}</TableCell>
                             <TableCell>
                               <IconButton
                                 aria-label="delete"
-                                onClick={() => deleteHandler(data._id, idx)}
+                                onClick={() => deleteHandler(data, idx)}
                               >
                                 <DeleteIcon
                                   className={styles["delete-button"]}
@@ -253,7 +201,7 @@ const StandardList = ({ newData }) => {
                               </IconButton>
                               <IconButton
                                 onClick={() => {
-                                  navigate("/edit/standard-data/" + data._id);
+                                  navigate("/edit/standard-data/" + data.id);
                                 }}
                               >
                                 <BorderColorIcon />
@@ -276,7 +224,7 @@ const StandardList = ({ newData }) => {
               <TableSkeleton />
             )}
           </CardContent>
-          {!Loading && (
+          {loading === "fulfilled" && (
             <TablePagination
               rowsPerPageOptions={[20, 50, 100]}
               component="div"

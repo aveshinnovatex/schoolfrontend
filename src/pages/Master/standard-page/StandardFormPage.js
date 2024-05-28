@@ -6,7 +6,6 @@ import StandardForm from "../../../components/Master/Standard/standardForm";
 
 const StandardFormPage = () => {
   const dispatch = useDispatch();
-
   useEffect(() => {
     dispatch(uiAction.title("Standard Form"));
   }, [dispatch]);

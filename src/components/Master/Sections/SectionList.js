@@ -1,9 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { toast } from "react-toastify";
-
-// import { RotatingLines } from "react-loader-spinner";
-
+import { toastError } from "../../../util/react.toastify";
 import {
   Table,
   TableBody,
@@ -16,71 +13,47 @@ import {
   Divider,
   Typography,
 } from "@mui/material";
-
-import { authActions } from "../../../redux/auth-slice";
-import {
-  fetchDataWithPagination,
-  deleteDataById,
-} from "../../../redux/http-slice";
 import useHttpErrorHandler from "../../../hooks/useHttpErrorHandler";
 import Modal from "../../UI/Modal";
 import TableSkeleton from "../../UI/Skeleton";
 import styles from "./styles.module.css";
-
+import { fetchSection, deleteSections } from "../../../redux/section.slice";
 const SectionList = ({ onEditHandler }) => {
+  const { sections, loading } = useSelector((state) => state.section);
   const [page, setPage] = useState({ currentPage: 0, totaltems: 0 });
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
   const [index, setIndex] = useState(1);
   const [section, setSection] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [sectionIdToDelete, setSectionIdToDelete] = useState(null);
-
+  const [sectionIdToDelete, setSectionIdToDelete] = useState({});
   const handleHttpError = useHttpErrorHandler();
-
   const dispatch = useDispatch();
 
   const { pageData, Loading, response, deletedData, updatedData } = useSelector(
     (state) => state.httpRequest
   );
 
-  //   console.log(pageData);
-
   useEffect(() => {
-    if (!Loading && pageData) {
+    if (loading === "fulfilled") {
       setPage({ ...page, totaltems: pageData?.totalData });
-      setSection(pageData?.data);
+      setSection(sections);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [Loading, pageData]);
+  }, [loading, pageData]);
 
-  const path = `/section?page=${page.currentPage}&perPage=${rowsPerPage}`;
+  const path = `page=${page.currentPage}&perPage=${rowsPerPage}`;
 
   useEffect(() => {
-    const fetchsection = async () => {
-      try {
-        const startIndex = page.currentPage * rowsPerPage + 1;
-        setIndex(startIndex);
-        await dispatch(fetchDataWithPagination({ path })).unwrap();
-      } catch (error) {
-        if (error?.status === 401 || error?.status === 500) {
-          toast.error("Please login again!", {
-            position: toast.POSITION.BOTTOM_CENTER,
-            autoClose: 2000,
-            hideProgressBar: true,
-            theme: "colored",
-          });
-          // dispatch(authActions.logout());
-        } else {
-          toast.error(error?.message || "Something went wrong", {
-            position: toast.POSITION.BOTTOM_CENTER,
-            autoClose: 2000,
-            hideProgressBar: true,
-            theme: "colored",
-          });
-        }
+    try {
+      const startIndex = page.currentPage * rowsPerPage + 1;
+      setIndex(startIndex);
+      dispatch(fetchSection(path)).unwrap();
+    } catch (error) {
+      if (error?.status === 401 || error?.status === 500) {
+        toastError("Please login again!");
+      } else {
+        toastError(error?.message || "Something went wrong");
       }
-    };
-    fetchsection();
+    }
   }, [
     dispatch,
     page.currentPage,
@@ -108,20 +81,19 @@ const SectionList = ({ onEditHandler }) => {
   };
 
   // delete account group
-  const deleteHandler = async (id) => {
+  const deleteHandler = async (object) => {
     setIsModalOpen(true);
-    setSectionIdToDelete(id);
+    setSectionIdToDelete(object);
   };
 
   // delete confirmation handler modal
   const handleConfirmDeleteHandler = async () => {
     try {
-      await dispatch(
-        deleteDataById({
-          path: "/section",
-          id: sectionIdToDelete,
-        })
-      ).unwrap();
+      await dispatch(deleteSections(sectionIdToDelete))
+        .unwrap()
+        .then(() => {
+          dispatch(fetchSection());
+        });
 
       // change page no if no document available after delete
       if (section.length === 1 && page?.currentPage !== 0) {
@@ -201,7 +173,7 @@ const SectionList = ({ onEditHandler }) => {
                     <TableCell component="th" scope="row">
                       {index + indx}
                     </TableCell>
-                    <TableCell align="left">{row?.section}</TableCell>
+                    <TableCell align="left">{row?.name}</TableCell>
                     <TableCell align="left">
                       <Button
                         variant="text"
@@ -215,7 +187,7 @@ const SectionList = ({ onEditHandler }) => {
                       <Button
                         variant="text"
                         onClick={() => {
-                          deleteHandler(row?._id);
+                          deleteHandler(row);
                         }}
                       >
                         Delete

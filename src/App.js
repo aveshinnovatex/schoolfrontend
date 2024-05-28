@@ -5,9 +5,7 @@ import Home from "./pages/landing-page/Home";
 import NotFoundPage from "./pages/404-page/NotFoundPage";
 import StandardFormPage from "./pages/Master/standard-page/StandardFormPage";
 import StandardListPage from "./pages/Master/standard-page/StandardListPage";
-import EditStandardFormPage, {
-  loader as standardDataLoader,
-} from "./pages/Master/standard-page/EditStandardFormPage";
+import EditStandardFormPage from "./pages/Master/standard-page/EditStandardFormPage";
 import SectionListPage from "./pages/Master/section-page/SectionListPage";
 import CityFormPage from "./pages/Master/city-page/CityFormPage";
 import CityListPage from "./pages/Master/city-page/CityList.Page";
@@ -119,18 +117,19 @@ import StudentImportPage from "./pages/student-import/StudentImportPage";
 import FeeRecordImportPage from "./pages/feeRecord-import/FeeRecordImportPage";
 import PaneltyImportPage from "./pages/feeRecord-import/PaneltyImportPage";
 import FeeDiscountImportPage from "./pages/feeRecord-import/FeeDiscountImportPage";
+import LoginFormPage from "./pages/auth-page/LoginFormPage";
 
 // import "./App.css";
 
 const router = createBrowserRouter([
   {
-    path: "",
+    path: "/",
     element: <RootLayout />,
     id: "root",
     children: [
       {
         index: true,
-        element: <Home />,
+        element: <LoginFormPage />,
       },
       {
         path: "/dashborad",
@@ -153,8 +152,7 @@ const router = createBrowserRouter([
       },
       {
         path: "edit/standard-data/:id",
-        id: "standard-data",
-        loader: standardDataLoader,
+
         element: (
           <ProtectedRoute allowedUserTypes={["admin", "teacher", "student"]} />
         ),
@@ -351,8 +349,6 @@ const router = createBrowserRouter([
       },
       {
         path: "edit-account/:id",
-        loader: accountDetails,
-        id: "account-data",
         element: <ProtectedRoute allowedUserTypes={["admin"]} />,
         children: [{ index: true, element: <EditAccountFormPage /> }],
       },

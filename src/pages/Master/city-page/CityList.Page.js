@@ -1,51 +1,33 @@
 import React, { useState, useEffect } from "react";
-import { toast } from "react-toastify";
-import { useDispatch } from "react-redux";
-
-import { uiAction } from "../../../redux/ui-slice";
+import { useDispatch, useSelector } from "react-redux";
 import CityList from "../../../components/Master/City/CityList";
 import Modal from "../../../components/UI/Modal";
 import styles from "../../../components/Master/City/CityForm.module.css";
-import instance from "../../../util/axios/config";
-
+import { updateCity, fetchCity } from "../../../redux/city.slice";
+import { toastSuceess, toastError } from "../../../util/react.toastify";
 const CityListPage = () => {
+  const { cities, loading } = useSelector((state) => state.city);
   const [isOpen, setIsOpen] = useState(false);
   const [value, setValue] = useState({});
   const [newValue, setNewValue] = useState("");
-  const [updatedData, setUpdatedData] = useState();
-
+  const [updatedData, setUpdatedData] = useState({});
   const dispatch = useDispatch();
-
-  useEffect(() => {
-    dispatch(uiAction.title("City"));
-  }, [dispatch]);
 
   const postSection = async (data) => {
     try {
-      const response = await instance.put("/city/" + value._id, { name: data });
-
-      if (response.data.status === "failed") {
-        return response;
-      }
-
-      toast.success(response.data.message, {
-        position: toast.POSITION.BOTTOM_CENTER,
-        autoClose: 2000,
-        hideProgressBar: true,
-        theme: "colored",
+      await dispatch(updateCity({ ...updatedData, name: data })).then(() => {
+        dispatch(fetchCity());
       });
-
-      setUpdatedData(response.data.data);
-      setIsOpen(false);
     } catch (error) {
-      toast.error(error.response.data.message, {
-        position: toast.POSITION.BOTTOM_CENTER,
-        autoClose: 2000,
-        hideProgressBar: true,
-        theme: "colored",
-      });
+      toastError(error);
     }
   };
+  useEffect(() => {
+    if (loading === "fulfilled") {
+      toastSuceess();
+      setIsOpen(false);
+    }
+  }, [loading]);
   const handleSubmit = (e) => {
     e.preventDefault();
     if (newValue === "") {
@@ -58,6 +40,7 @@ const CityListPage = () => {
   const openModal = (data) => {
     setValue({ ...data.data });
     setNewValue(data.data.name);
+    setUpdatedData(data.data);
     setIsOpen(true);
   };
 
